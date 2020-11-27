@@ -1,5 +1,10 @@
 # Functions for modelling response errors in precision tasks
 
+
+## R package (2020-11-27)
+
+JV10_df() now also outputs trial-wise parameters (Wt, Wn, Wu).
+
 ## R package (2020-01-07)
 
 This code has now been collected into [an R package](https://github.com/eddjberry/mixturer) with some tests and a fix to the sd2k() function.
