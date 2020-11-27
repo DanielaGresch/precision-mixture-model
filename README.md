@@ -1,9 +1,9 @@
 # Functions for modelling response errors in precision tasks
 
 
-## R package (2020-11-27)
+## Update - trialwise paramters (2020-11-27)
 
-JV10_df() now also outputs trial-wise parameters (Wt, Wn, Wu).
+JV10_df() now also outputs trialwise parameters (Wt = probability for target response,  Wn = probability for swaps, Wu = probability for guesses).
 
 ## R package (2020-01-07)
 
