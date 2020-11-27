@@ -41,19 +41,25 @@ A1inv <- function(R) {
 # Returns a list where the first element in a single row data frame
 # of parameter estimates and the second is a single log likelihood value
 
-JV10_function <- function(X, Tg, 
-                          NT = replicate(NROW(X), 0), 
+JV10_function <- function(X,
+                          Tg,
+                          NT = replicate(NROW(X), 0),
                           B_start = NULL) {
-  
-  if(NCOL(X) > 2 | NCOL(Tg) > 1 | NROW(X) != NROW(Tg) | (any(NT != 0) & NROW(NT) != NROW(X) | NROW(NT) != NROW(Tg))) {
+  if (NCOL(X) > 2 |
+      NCOL(Tg) > 1 |
+      NROW(X) != NROW(Tg) |
+      (any(NT != 0) & NROW(NT) != NROW(X) | NROW(NT) != NROW(Tg))) {
     stop("Error: Input not correctly dimensioned", call. = FALSE)
   }
   
-  if((!(is.null(B_start))) & (any(B_start[1] < 0, B_start[2:4] < 0, B_start[2:4] > 1, abs(sum(B_start[2:4]) - 1) > 10^-6))) {
+  if ((!(is.null(B_start))) &
+      (any(B_start[1] < 0, B_start[2:4] < 0, B_start[2:4] > 1, abs(sum(B_start[2:4]) - 1) > 10 ^
+           -6))) {
     stop("Error: Invalid model parameters", call. = FALSE)
   }
   
-  max_iter = 10^4; max_dLL = 10^-4
+  max_iter = 10 ^ 4
+  max_dLL = 10 ^ -4
   
   n = NROW(X)
   
@@ -61,35 +67,40 @@ JV10_function <- function(X, Tg,
   
   # Default starting parameter
   
-  if(is.null(B_start)) {
-    K = 5; Pt = 0.5
+  if (is.null(B_start)) {
+    K = 5
+    Pt = 0.5
     Pn = ifelse(nn > 0, 0.3, 0)
     Pu = 1 - Pt - Pn
   } else {
-    K = B_start[1]; Pt = B_start[2]
-    Pn = B_start[3]; Pu = B_start[4]
+    K = B_start[1]
+    Pt = B_start[2]
+    Pn = B_start[3]
+    Pu = B_start[4]
   }
   
   E = wrap(X - Tg)
   
-  if(nn > 0){
+  if (nn > 0) {
     NE = wrap(repmat(X, nn) - NT)
   } else {
     NE = repmat(X, nn)
   }
   
-  LL = 0; dLL = 1; iter = 1
+  LL = 0
+  dLL = 1
+  iter = 1
   
-  while(TRUE) {
+  while (TRUE) {
     iter = iter + 1
     
     Wt = Pt * vonmisespdf(E, 0, K)
     Wg = Pu * replicate(n, 1) / (2 * pi)
     
-    if(nn == 0){
-      Wn = matrix(nrow = NROW(NE), ncol = NCOL(NE)) 
+    if (nn == 0) {
+      Wn = matrix(nrow = NROW(NE), ncol = NCOL(NE))
     } else {
-      Wn = Pn/nn * vonmisespdf(NE, 0, K)
+      Wn = Pn / nn * vonmisespdf(NE, 0, K)
     }
     
     W = rowSums(cbind(Wt, Wg, Wn))
@@ -97,7 +108,7 @@ JV10_function <- function(X, Tg,
     dLL = LL - sum(log(W))
     LL = sum(log(W))
     
-    if(abs(dLL) < max_dLL | iter > max_iter | is.nan(dLL)) {
+    if (abs(dLL) < max_dLL | iter > max_iter | is.nan(dLL)) {
       break
     }
     
@@ -107,36 +118,46 @@ JV10_function <- function(X, Tg,
     
     rw = c((Wt / W), (Wn / repmat(W, nn)))
     
-    S = c(sin(E), sin(NE)) ; C = c(cos(E), cos(NE))
+    S = c(sin(E), sin(NE))
+    C = c(cos(E), cos(NE))
     r = c(sum(sum(S * rw)), sum(sum(C * rw)))
     
-    if(sum(sum(rw, na.rm = T)) == 0) {
+    if (sum(sum(rw, na.rm = T)) == 0) {
       K = 0
     } else {
-      R = sqrt(sum(r^2)) / sum(sum(rw))
+      R = sqrt(sum(r ^ 2)) / sum(sum(rw))
       K = A1inv(R)
     }
     
-    if(n <= 15) {
-      if(K < 2) {
+    if (n <= 15) {
+      if (K < 2) {
         K = max(K - 2 / (n * K), 0)
       } else {
-        K = K * (n - 1)^3 / (n^3 + n)
+        K = K * (n - 1) ^ 3 / (n ^ 3 + n)
       }
     }
   }
   
   
-  if(iter > max_iter) {
-    warning('JV10_function:MaxIter','Maximum iteration limit exceeded.', call. = FALSE)
-    B = c(NaN, NaN, NaN, NaN); LL = NaN
+  if (iter > max_iter) {
+    warning('JV10_function:MaxIter',
+            'Maximum iteration limit exceeded.',
+            call. = FALSE)
+    B = c(NaN, NaN, NaN, NaN)
+    LL = NaN
+    W = NaN # new
   } else {
-    B = data.frame(K = K, Pt = Pt, Pn = Pn, Pu = Pu)
+    B = data.frame(K = K,
+                   Pt = Pt,
+                   Pn = Pn,
+                   Pu = Pu)
+    W = data.frame(Wt = Wt / W, # new
+                   Wn = rowSums(Wn) / W, # new
+                   Wg = Wg / W) # new
   }
   
-  return(list(b = B, ll = LL))
-  
-} 
+  return(list(b = B, ll = LL, w = W)) # new (w = W added)
+}
 
 
 ##########################################################################

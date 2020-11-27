@@ -20,14 +20,29 @@
 # pN = probability of none target response
 # pU = probability of uniform response
 
-# If the argument return.ll is true then it will also return log-likelihood
+#=============
 
-source("JV10_function.R")
+# Edits:  29/10/2020
+
+# If the argument return.llW == TRUE then it will also return log-likelihood
+
+# If the argument return.llW == TRUE then it will also return trialwise estimates
+# Wt = probability of responding with target value
+# Wn = probability of none target response
+# Wu = probability of uniform response
+
 
 #=============
 
-JV10_fit <- function(X, Tg, NT = replicate(NROW(X), 0), return.ll = TRUE) {
-  if(NCOL(X) > 2 | NCOL(Tg) > 1 | NROW(X) != NROW(Tg) | (any(NT != 0) & NROW(NT) != NROW(X) | NROW(NT) != NROW(Tg))) {
+JV10_fit <- function(X,
+                     Tg,
+                     NT = replicate(NROW(X), 0),
+                     return.llW = TRUE) {
+  if (NCOL(X) > 2 |
+      NCOL(Tg) > 1 |
+      NROW(X) != NROW(Tg) |
+      (any(NT != 0) &
+       NROW(NT) != NROW(X) | NROW(NT) != NROW(Tg))) {
     stop("Error: Input not correctly dimensioned", call. = FALSE)
   }
   n = NROW(X)
@@ -39,32 +54,36 @@ JV10_fit <- function(X, Tg, NT = replicate(NROW(X), 0), return.ll = TRUE) {
   N = c(0.01, 0.1, 0.4)
   U = c(0.01, 0.1, 0.4)
   
-  if(nn == 0) {N = 0}
+  if (nn == 0) {
+    N = 0
+  }
   
   loglik = -Inf
   
   # Parameter estimates
-  for(i in seq_along(K)) {
-    for(j in seq_along(N)) {
-      for(k in seq_along(U)) {
-        est_list = JV10_function(X = X, Tg = Tg, NT = NT, B_start = c(K[i], 1-N[j]-U[k], N[j], U[k]))
-        if (est_list$ll > loglik & !is.nan(est_list$ll) ) {
+  for (i in seq_along(K)) {
+    for (j in seq_along(N)) {
+      for (k in seq_along(U)) {
+        est_list = JV10_function(
+          X = X,
+          Tg = Tg,
+          NT = NT,
+          B_start = c(K[i], 1 - N[j] - U[k], N[j], U[k])
+        )
+        if (est_list$ll > loglik & !is.nan(est_list$ll)) {
           loglik = est_list$ll
           B = est_list$b
+          W = est_list$w # new
         }
       }
     }
   }
   
-  if(return.ll == TRUE) {
-    return(list(B = B, LL = loglik))
+  
+  if (return.llW == TRUE) {
+    # new (added W)
+    return(list(B = B, LL = loglik, W = W)) # new (added W)
   } else {
     return(B)
   }
 }
-
-##########################################################################
-#   Copyright 2010 Paul Bays. This program is free software: you can     #
-#   redistribute it and/or modify it under the terms of the GNU General  #
-#   Public License as published by the Free Software Foundation.         #
-##########################################################################
